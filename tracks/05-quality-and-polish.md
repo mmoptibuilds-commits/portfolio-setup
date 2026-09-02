@@ -1,27 +1,69 @@
 # Track 5 — Quality and polish
 
-**Goal:** Turn “it works” into “it is credible, intentional and release-quality.”
+**Goal:** Turn “the feature works” into “the feature is intentional, responsive,
+accessible, fast and visually strong.”
 
-Do not polish by randomly adding effects. Polish in layers.
-
-## Quality order
+Do not polish by randomly adding effects. Polish in this order:
 
 ```mermaid
 flowchart TD
     A["1 · Correct behavior"] --> B["2 · Content + hierarchy"]
     B --> C["3 · Mobile + responsive"]
     C --> D["4 · Accessibility"]
-    D --> E["5 · Visual detail"]
+    D --> E["5 · Visual craft"]
     E --> F["6 · Motion"]
     F --> G["7 · Performance"]
     G --> H["8 · Final verify"]
 ```
 
-## 1. Correct behavior
+Keep the same task branch from Track 4.
 
-Run the narrow tests relevant to the changed route/feature.
+---
 
-Typical:
+# 1. Correct behavior first
+
+**Open:** Claude Code, portfolio root.  
+**Use:** DeepSeek V4 Flash if code still needs fixing; GLM-5.3 if you only need a
+read-only diagnosis.  
+**Give it:** final task brief + current diff + relevant failing output.
+
+### Paste this prompt
+
+```text
+Audit the current task for functional completeness before visual polish.
+
+READ
+- final implementation brief
+- current diff
+- relevant tests/source
+- README.md
+- AGENTS.md
+
+DO NOT redesign.
+DO NOT add visual effects.
+
+Check:
+- the requested user behavior actually exists
+- success paths
+- failure/error paths
+- forms/admin state where relevant
+- direct route refresh
+- no-JS behavior where relevant
+- keyboard behavior where relevant
+- stale or missing loading/empty/error states
+
+RETURN
+BLOCKER/HIGH/MEDIUM/LOW findings with exact evidence and the smallest fix.
+Do not edit unless I explicitly tell you to.
+```
+
+### What you check yourself
+
+Use the feature manually. Do not move on because the agent says it works.
+
+### Pass to the next tool
+
+If blocker/high behavior bugs exist, give them to DeepSeek to fix, then run:
 
 ```powershell
 npm run typecheck
@@ -29,38 +71,132 @@ npm run lint
 npm run test
 ```
 
-If a form/admin flow changed, test success **and failure** paths, not only the
-happy path.
+---
 
-## 2. Content and hierarchy
+# 2. Content + hierarchy review
 
-Ask:
+**Open:** Gemini App or Antigravity.  
+**Use:** Gemini 3.1 Pro for the important route; Flash is fine for a quick
+secondary pass.  
+**Give it:** current page screenshots, project brief, route goal.
 
-- What is this page trying to make the visitor understand?
-- What is the primary action?
-- Is proof honest?
-- Is the most important sentence visible before decorative explanation?
-- Does the page feel specific to mmoptibuilds?
+### Paste this prompt
 
-Use Gemini/Antigravity prompts from
-[Visual + quality prompts](../prompts/visual-and-quality.md).
+```text
+Review the current <ROUTE> for content hierarchy and conversion before visual polish.
 
-## 3. Mobile composition
+PROJECT GOAL
+<PASTE ROUTE GOAL>
 
-The current verification suite already checks many widths, but automation cannot
-judge whether the composition feels good.
+CHECK
+- Can a first-time visitor understand the page quickly?
+- Is the primary action obvious?
+- Is important proof visible before decorative explanation?
+- Does the copy sound specific to mmoptibuilds rather than generic agency/AI copy?
+- Are Studio/Systems boundaries truthful and clear?
+- Are there vague claims, filler, repeated ideas or unnecessary sections?
+- Is the page scannable on mobile?
+- Does every section earn its place?
 
-Run:
+DO NOT invent copy claims, metrics, clients or testimonials.
+DO NOT propose effects yet.
+
+RETURN
+KEEP
+CUT
+REWRITE
+REORDER
+MISSING
+
+For each suggestion explain the user/business reason.
+```
+
+### What you check yourself
+
+You should agree with the **reason**, not just the wording.
+
+### Pass to the next tool
+
+Give only accepted content/hierarchy changes to GLM if they affect architecture,
+or directly to DeepSeek if they are small and within the approved task.
+
+---
+
+# 3. Mobile + responsive review
+
+**Run first:**
 
 ```powershell
 npm run check:responsive
 ```
 
-Then inspect the generated screenshots.
+Inspect the generated screenshots yourself.
 
-Use Antigravity `/browser` for changed routes.
+Then use Antigravity.
 
-## 4. Accessibility
+**Open:** Antigravity Project, dev server running.  
+**Use:** Gemini 3.7 Flash for wide coverage.  
+**Mode:** `/browser`, read-only.
+
+### Paste this prompt
+
+```text
+/browser
+
+Perform a read-only responsive QA pass for:
+<ROUTE>
+
+Test approximately:
+320
+360
+375
+390
+430
+768
+1024
+1280
+1440
+1920 px
+
+CHECK
+- horizontal overflow
+- text clipping
+- awkward line breaks
+- image/media crop
+- navigation
+- section spacing
+- touch target size
+- content order
+- CTA visibility
+- sticky/fixed behavior
+- scroll interactions
+- desktop elements that simply collapse badly on mobile
+
+IMPORTANT
+Mobile must be intentionally composed, not merely desktop stacked vertically.
+
+DO NOT EDIT FILES.
+
+RETURN
+P0 broken
+P1 high impact
+P2 polish
+
+For every finding include viewport + exact location + desired outcome.
+Also list what is already working well and should be preserved.
+```
+
+### What you check yourself
+
+Open at least one phone width and one desktop width yourself.
+
+### Pass to the next tool
+
+Give accepted P0/P1 findings to DeepSeek with the visual-fix prompt from Track 4.
+
+---
+
+# 4. Accessibility review
 
 Run:
 
@@ -69,44 +205,249 @@ npm run check:a11y
 npm run check:keyboard
 ```
 
-Manually check:
+Then do your own quick manual check:
 
-- Tab through everything.
-- Use `Shift+Tab` backwards.
-- Test 200% browser zoom.
-- Enable reduced motion.
-- Check focus is always visible.
-- Check important content still exists without hover.
-- Check form errors make sense.
+1. `Tab` through the page.
+2. `Shift+Tab` backwards.
+3. Zoom browser to 200%.
+4. Turn on reduced motion.
+5. Confirm visible focus.
+6. Confirm no important information depends only on hover.
+7. Confirm form errors are understandable.
 
-Automated axe results are signals, not proof that the experience is fully
-accessible.
+Then ask GLM or a dedicated accessibility reviewer.
 
-## 5. Visual details
+### Paste this prompt
 
-Only now tune:
+```text
+Perform a read-only accessibility review of the current task.
 
-- typography;
-- line lengths;
-- spacing rhythm;
-- image crops;
-- borders/material language;
-- icon alignment;
-- hover/press feedback;
-- transitions.
+READ
+- current diff
+- relevant route/components
+- existing a11y/keyboard test scripts
+- README.md / AGENTS.md constraints
 
-Use **Taste Skill** or an independent Gemini critique when the page feels
-generic but you cannot explain why.
+CHECK
+- semantic structure
+- headings/landmarks
+- accessible names
+- keyboard path
+- focus visibility/order
+- dialog/menu behavior
+- touch target implications
+- color/contrast risks
+- reduced motion
+- no-JS fallbacks
+- form labels/errors/status announcements
+- zoom/narrow viewport risks
 
-## 6. Motion
+Do not report theoretical ARIA preferences when native semantic HTML already
+solves the problem.
 
-Read [UI, motion + skills](../reference/ui-motion-and-skills.md).
+RETURN evidence-backed findings only:
+BLOCKER / HIGH / MEDIUM / LOW
++ file/location
++ why
++ smallest fix
++ verification command/manual check.
 
-Add complexity only when a named sequence needs it.
+Do not edit.
+```
 
-After motion changes, retest reduced motion and keyboard behavior.
+### What you check yourself
 
-## 7. Performance
+Automated “0 violations” is useful evidence, but not proof of perfect
+accessibility. Your keyboard/reduced-motion check still matters.
+
+### Pass to the next tool
+
+Accepted findings → DeepSeek → rerun the affected checks.
+
+---
+
+# 5. Visual craft pass
+
+Now use the curated design skills.
+
+Recommended order:
+
+1. **Impeccable** — systematic critique/audit.
+2. **Taste Skill** — only if the result still feels generic or AI-made.
+3. **Checklist Design** — milestone audit.
+4. **Emil Kowalski skills** — when motion needs specialist review.
+
+Do not run every skill on every edit.
+
+If Impeccable is installed in the harness, use the appropriate command such as
+`/impeccable critique` or `/impeccable audit`.
+
+### Paste this prompt after invoking the skill
+
+```text
+Audit <ROUTE> as a real mmoptibuilds product, not as a component-demo page.
+
+ROUTE MODE
+<Experience / Persuade / Operate>
+
+PROJECT GOAL
+<PASTE GOAL>
+
+FOCUS
+- hierarchy
+- typography
+- rhythm/spacing
+- composition
+- visual identity
+- originality
+- density
+- affordances
+- interaction states
+- consistency with the route's role
+- mobile composition
+
+ANTI-PATTERNS
+- generic purple gradients
+- endless glass cards
+- effect stacking
+- random marquee walls
+- copied component-library identity
+- fake proof
+- decorative elements that weaken conversion
+
+Return the smallest set of high-impact improvements.
+Do not edit until I approve them.
+```
+
+### What you check yourself
+
+Ask: “Does this feel more like **mmoptibuilds**, or just more decorated?”
+
+### Pass to the next tool
+
+Accepted design findings → GLM if they materially change the plan; otherwise
+DeepSeek for scoped polish.
+
+---
+
+# 6. Decide whether advanced motion earns its cost
+
+The current portfolio intentionally removed unused animation libraries. CSS
+already handles existing interactions efficiently.
+
+Use this decision rule:
+
+```mermaid
+flowchart TD
+    A["Can CSS express it cleanly?"] -->|Yes| B["Use CSS"]
+    A -->|No| C["Is it an orchestrated sequence?"]
+    C -->|Yes| D["Consider GSAP"]
+    C -->|No| E["Use existing/native approach"]
+    F["Need smooth-scroll feel?"] --> G{"Native scroll insufficient for an approved experience?"}
+    G -->|No| H["No Lenis"]
+    G -->|Yes| I["Consider Lenis + accessibility/anchor/history tests"]
+    J["Need real 3D/shader scene?"] --> K{"Unique value survives performance review?"}
+    K -->|No| L["Static/CSS/media alternative"]
+    K -->|Yes| M["Route-specific WebGL + fallback"]
+```
+
+If any advanced dependency is proposed, **do not install it yet**.
+
+**Use:** GLM-5.3, read-only.
+
+### Paste this prompt
+
+```text
+Review whether the proposed advanced visual dependency is justified.
+
+PROPOSED EFFECT
+<DESCRIBE THE EXACT SEQUENCE>
+
+CANDIDATE
+<GSAP / Lenis / Three.js / shader / other>
+
+CURRENT IMPLEMENTATION
+<DESCRIBE OR LET THE AGENT INSPECT>
+
+COMPARE
+1. existing CSS/native solution
+2. candidate dependency solution
+
+RETURN
+- user/design benefit
+- why current tools are insufficient
+- exact route(s) that need it
+- bundle/runtime cost
+- accessibility risks
+- reduced-motion fallback
+- mobile/weak-device fallback
+- anchor/history/keyboard risks if scroll is modified
+- removal plan if it fails performance review
+- recommendation: APPROVE / REJECT / PROTOTYPE IN ISOLATION
+
+Do not install anything.
+```
+
+### What you check yourself
+
+Approve only when you can name the visual/user benefit in one sentence.
+
+### Pass to the next tool
+
+If approved, give the approval to DeepSeek.
+
+For GSAP only after approval:
+
+```powershell
+npm install gsap
+```
+
+For Lenis only after approval:
+
+```powershell
+npm install lenis
+```
+
+Do not install Three/WebGL packages until a specific approved scene names the
+required packages.
+
+### Paste this prompt for the approved implementation
+
+```text
+Implement only the approved advanced-motion sequence.
+
+APPROVAL
+<PASTE GLM APPROVAL>
+
+RULES
+- keep the dependency route-scoped/dynamically loaded where practical
+- provide reduced-motion fallback
+- provide mobile/weak-device fallback
+- preserve navigation, anchors, keyboard and focus
+- do not turn normal scrolling into a trap
+- clean up observers/timelines/listeners
+- keep static meaningful content available without the effect
+
+AFTER IMPLEMENTATION RUN
+npm run typecheck
+npm run lint
+npm run test
+npm run check:keyboard
+npm run check:responsive
+npm run check:bundle
+npm run check:perf
+npm run verify
+
+Report before/after bundle/performance evidence.
+```
+
+### What you check yourself
+
+If it is prettier but measurably worse and not more useful, remove it.
+
+---
+
+# 7. Performance review
 
 Run:
 
@@ -115,44 +456,102 @@ npm run check:bundle
 npm run check:perf
 ```
 
-Remember a new animation library can pass TypeScript and still be the wrong
-decision because it increases every route's JS.
+Use GLM read-only if numbers regress.
 
-## 8. Full gate
+### Paste this prompt
+
+```text
+Analyze the performance/bundle impact of the current task.
+
+INPUT
+- current diff
+- check:bundle output
+- check:perf output
+- relevant route/components
+
+CHECK
+- new client-side JS
+- global vs route-specific imports
+- image/media weight
+- unnecessary hydration
+- animation/event-listener cost
+- layout shift
+- likely LCP/CLS impact
+- duplicate libraries
+- client imports pulling server/schema packages
+
+Use AGENTS.md documented bundle traps.
+
+RETURN
+1. regression evidence
+2. likely root cause
+3. smallest optimization
+4. exact command to verify it
+
+Do not edit.
+```
+
+### What you check yourself
+
+Do not optimize arbitrary code if the metrics already remain comfortably within
+the project's budget.
+
+### Pass to the next tool
+
+Only evidence-backed regressions → DeepSeek.
+
+---
+
+# 8. Final quality gate
+
+After every accepted quality fix:
 
 ```powershell
 npm run verify
 ```
 
-Do not call the branch finished if this fails.
+Then redo the most relevant browser check.
 
-## 9. Code review + visual review
+### Paste this prompt
 
-- GLM: read-only diff review.
-- DeepSeek: fix accepted findings.
-- Antigravity/Gemini: browser/visual review.
-- DeepSeek: fix accepted visual findings.
-- `npm run verify` again after final code changes.
+```text
+Perform a final read-only milestone review.
 
-## 10. Screenshot evidence
+Check the final branch against:
+- original task outcome
+- final implementation brief
+- accepted code-review findings
+- accepted visual findings
+- mobile
+- accessibility
+- performance
+- truthful content
+- documentation state
 
-For major visual milestones, keep useful **review evidence** outside production
-data. The project already writes verification screenshots to a git-ignored
-directory.
+Return only:
+READY
+or
+NOT READY
 
-Never capture admin pages containing real enquiry/customer data for an AI review.
+If NOT READY, list only release-blocking/high-impact gaps with evidence.
+Do not invent optional polish to keep the task open forever.
+```
+
+### What you check yourself
+
+You personally decide when optional polish stops.
 
 ## Done when
 
-- [ ] Correct behavior passes targeted checks.
-- [ ] Mobile is intentionally composed.
-- [ ] Keyboard + reduced motion work.
-- [ ] No important content depends on hover or JavaScript reveal.
-- [ ] Visual polish supports hierarchy/conversion.
-- [ ] Motion has a named purpose.
-- [ ] Bundle/perf checks pass.
-- [ ] `npm run verify` passes after the final fix.
-- [ ] Code and browser reviews have no unresolved high-impact issue.
+- [ ] behavior is correct;
+- [ ] hierarchy/conversion make sense;
+- [ ] mobile is intentionally designed;
+- [ ] keyboard/reduced-motion work;
+- [ ] visual craft feels authored;
+- [ ] advanced motion exists only when justified;
+- [ ] bundle/performance checks remain healthy;
+- [ ] `npm run verify` passes after final fixes;
+- [ ] no unresolved blocker/high finding remains.
 
 ## Next
 

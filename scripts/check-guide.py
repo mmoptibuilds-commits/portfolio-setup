@@ -7,9 +7,8 @@ from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
 
-REQUIRED = [
-    "README.md",
-    *[f"tracks/{i:02d}-{name}.md" for i, name in [
+TRACKS = [
+    f"tracks/{i:02d}-{name}.md" for i, name in [
         (1, "first-time-setup"),
         (2, "open-and-understand-project"),
         (3, "first-safe-agent-session"),
@@ -18,7 +17,12 @@ REQUIRED = [
         (6, "backend-admin-and-data"),
         (7, "seo-security-and-launch"),
         (8, "maintenance"),
-    ]],
+    ]
+]
+
+REQUIRED = [
+    "README.md",
+    *TRACKS,
     "reference/glossary.md",
     "reference/git-and-github-desktop.md",
     "reference/claude-code.md",
@@ -69,8 +73,15 @@ for path in markdown_files:
     if len(FENCE_RE.findall(text)) % 2:
         errors.append(f"{rel}: unbalanced fenced code blocks")
 
-    if rel.startswith("tracks/") and "\n## Next\n" not in text:
-        errors.append(f"{rel}: missing '## Next' section")
+    if rel.startswith("tracks/"):
+        if "\n## Next\n" not in text:
+            errors.append(f"{rel}: missing '## Next' section")
+        if "### Paste this prompt" not in text:
+            errors.append(f"{rel}: missing inline copy-paste prompt")
+        if "### What you check yourself" not in text:
+            errors.append(f"{rel}: missing human verification step")
+        if "Pass to the next tool" not in text:
+            errors.append(f"{rel}: missing explicit tool handoff")
 
     for match in LINK_RE.finditer(text):
         raw = match.group(1).strip()
@@ -96,5 +107,6 @@ if errors:
 
 print(
     f"Guide checks passed: {len(REQUIRED)} required files, "
-    f"{len(markdown_files)} Markdown files."
+    f"{len(markdown_files)} Markdown files. "
+    "All tracks include inline prompts, human checks, explicit handoffs and Next steps."
 )

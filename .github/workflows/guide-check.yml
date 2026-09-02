@@ -1,0 +1,26 @@
+name: Guide checks
+
+on:
+  push:
+    branches:
+      - main
+      - "guide/**"
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  guide-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate guide structure and links
+        run: python scripts/check-guide.py
